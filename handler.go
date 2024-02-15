@@ -6,6 +6,24 @@ import (
 	"net/http"
 )
 
+type File struct {
+	// FieldName denotes the field from the multipart form
+	FieldName string `json:"field_name,omitempty"`
+
+	// The name of the file from the client side
+	OriginalName string `json:"original_name,omitempty"`
+	// UploadedFileName denotes the name of the file when it was ultimately
+	// uploaded to the storage layer. The distinction is important because of
+	// potential changes to the file nmae that may be done
+	UploadedFileName string `json:"uploaded_file_name,omitempty"`
+	// FolderDestination is the folder that holds the uploaded file
+	FolderDestination string `json:"folder_destination,omitempty"`
+
+	MimeType string `json:"mime_type,omitempty"`
+
+	Size int64 `json:"size,omitempty"`
+}
+
 func Chain(handlers ...http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	})
