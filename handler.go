@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
+	"time"
 )
 
 type File struct {
@@ -29,13 +30,36 @@ func Chain(handlers ...http.Handler) http.Handler {
 	})
 }
 
+// ValidationFunc is a type that can be used to dynamically validate a file
+type ValidationFunc func(f multipart.File) error
+
+// NameGeneratorFunc allows you alter the name of the file before
+// it is ultimately uplaoded and stored. This is neccessarily if
+// you have to adhere to specific formats as an example
+type NameGeneratorFunc func(s string) string
+
+var (
+	// allows all file pass through
+	defaultValidationFunc ValidationFunc = func(f multipart.File) error {
+		return nil
+	}
+
+	// defaultNameGeneratorFunc uses the gulter-158888-originalname to
+	// upload files
+	defaultNameGeneratorFunc NameGeneratorFunc = func(s string) string {
+		return fmt.Sprintf("gulter-%d-%s", time.Now().Unix(), s)
+	}
+
+	defaultFileUploadMaxSize = 1024 * 1024 * 5
+)
+
 type Gulter struct {
 	storage           Storage
 	destination       string
 	maxSize           int64
 	formKeys          []string
-	validationFunc    func(f multipart.File) error
-	nameFuncGenerator func(s string) string
+	validationFunc    ValidationFunc
+	nameFuncGenerator NameGeneratorFunc
 }
 
 func New(opts ...Option) *Gulter {
@@ -69,13 +93,29 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 					return
 				}
 
-				if err := h.storage.Upload(r.Context(), f,
-					h.nameFuncGenerator(header.Filename)); err != nil {
+				uploadedFileName := h.nameFuncGenerator(header.Filename)
 
+				var mimeType string
+
+				metadata, err := h.storage.Upload(r.Context(), f, &UploadFileOptions{
+					FileName: uploadedFileName,
+				})
+				if err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
 					_, _ = fmt.Fprintf(w, `{"error" : "could not upload file with key(%s).. %v"}`, key, err)
 					return
 				}
+
+				uploadedFile := File{
+					FieldName:         key,
+					OriginalName:      header.Filename,
+					UploadedFileName:  uploadedFileName,
+					FolderDestination: metadata.FolderDestination,
+					MimeType:          mimeType,
+					Size:              header.Size,
+				}
+
+				r = r.WithContext(writeFileToContext(r.Context(), uploadedFile, key))
 
 				f.Close()
 			}
