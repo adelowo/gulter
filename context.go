@@ -29,6 +29,10 @@ func writeFilesToContext(ctx context.Context,
 		existingFiles = Files{}
 	}
 
+	for _, v := range f {
+		existingFiles[v.FieldName] = v
+	}
+
 	return context.WithValue(ctx, fileKey, existingFiles)
 }
 

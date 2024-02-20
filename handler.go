@@ -117,7 +117,7 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 							UploadedFileName:  uploadedFileName,
 							FolderDestination: metadata.FolderDestination,
 							MimeType:          mimeType,
-							Size:              header.Size,
+							Size:              metadata.Size,
 						}
 						return nil
 					})
