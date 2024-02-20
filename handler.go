@@ -5,6 +5,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type File struct {
@@ -79,46 +81,54 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 
 			_ = r.ParseMultipartForm(h.maxSize)
 
+			var wg errgroup.Group
+
+			uploadedFiles := make(Files, len(keys))
+
 			for _, key := range keys {
-				f, header, err := r.FormFile(key)
-				if err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-					_, _ = fmt.Fprintf(w, `{"error" : "could not fetch form field (%s)...%v"}`, key, err)
-					return
-				}
+				// still need this for users pre go 1.22
+				func(key string) {
+					wg.Go(func() error {
+						f, header, err := r.FormFile(key)
+						if err != nil {
+							return err
+						}
 
-				if err := h.validationFunc(f); err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-					_, _ = fmt.Fprintf(w, `{"error" : "could not validate file with key(%s).. %v"}`, key, err)
-					return
-				}
+						defer f.Close()
 
-				uploadedFileName := h.nameFuncGenerator(header.Filename)
+						if err := h.validationFunc(f); err != nil {
+							return err
+						}
 
-				var mimeType string
+						uploadedFileName := h.nameFuncGenerator(header.Filename)
 
-				metadata, err := h.storage.Upload(r.Context(), f, &UploadFileOptions{
-					FileName: uploadedFileName,
-				})
-				if err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-					_, _ = fmt.Fprintf(w, `{"error" : "could not upload file with key(%s).. %v"}`, key, err)
-					return
-				}
+						var mimeType string
 
-				uploadedFile := File{
-					FieldName:         key,
-					OriginalName:      header.Filename,
-					UploadedFileName:  uploadedFileName,
-					FolderDestination: metadata.FolderDestination,
-					MimeType:          mimeType,
-					Size:              header.Size,
-				}
+						metadata, err := h.storage.Upload(r.Context(), f, &UploadFileOptions{
+							FileName: uploadedFileName,
+						})
+						if err != nil {
+							return err
+						}
 
-				r = r.WithContext(writeFileToContext(r.Context(), uploadedFile, key))
-
-				f.Close()
+						uploadedFiles[key] = File{
+							FieldName:         key,
+							OriginalName:      header.Filename,
+							UploadedFileName:  uploadedFileName,
+							FolderDestination: metadata.FolderDestination,
+							MimeType:          mimeType,
+							Size:              header.Size,
+						}
+						return nil
+					})
+				}(key)
 			}
+
+			if err := wg.Wait(); err != nil {
+				return
+			}
+
+			r = r.WithContext(writeFilesToContext(r.Context(), uploadedFiles))
 
 			next.ServeHTTP(w, r)
 		})

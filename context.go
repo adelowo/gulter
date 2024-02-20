@@ -21,6 +21,17 @@ const (
 
 type Files map[string]File
 
+func writeFilesToContext(ctx context.Context,
+	f Files,
+) context.Context {
+	existingFiles, ok := ctx.Value(fileKey).(Files)
+	if !ok {
+		existingFiles = Files{}
+	}
+
+	return context.WithValue(ctx, fileKey, existingFiles)
+}
+
 func writeFileToContext(ctx context.Context,
 	f File, formField string,
 ) context.Context {
