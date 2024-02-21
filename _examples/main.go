@@ -15,7 +15,7 @@ func main() {
 		gulter.WithNameFuncGenerator(func(s string) string {
 			return "gulter-" + s
 		}),
-		gulter.WithValidationFunc(gulter.ChainValidators(gulter.MimeTypeValidator("image/jpeg"))),
+		// gulter.WithValidationFunc(gulter.ChainValidators(gulter.MimeTypeValidator("image/jpeg"))),
 		gulter.WithStorage(&storage.Disk{}))
 
 	mux := http.NewServeMux()

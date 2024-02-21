@@ -29,18 +29,23 @@ type File struct {
 // ValidationFunc is a type that can be used to dynamically validate a file
 type ValidationFunc func(f File) error
 
+// ErrResponseHandler is a custom error that should be used to handle errors when
+// an upload fails
+type ErrResponseHandler func(File, error) http.HandlerFunc
+
 // NameGeneratorFunc allows you alter the name of the file before
 // it is ultimately uplaoded and stored. This is neccessarily if
 // you have to adhere to specific formats as an example
 type NameGeneratorFunc func(s string) string
 
 type Gulter struct {
-	storage           Storage
-	destination       string
-	maxSize           int64
-	formKeys          []string
-	validationFunc    ValidationFunc
-	nameFuncGenerator NameGeneratorFunc
+	storage              Storage
+	destination          string
+	maxSize              int64
+	formKeys             []string
+	validationFunc       ValidationFunc
+	nameFuncGenerator    NameGeneratorFunc
+	errorResponseHandler ErrResponseHandler
 }
 
 func New(opts ...Option) *Gulter {
@@ -48,6 +53,22 @@ func New(opts ...Option) *Gulter {
 
 	for _, opt := range opts {
 		opt(handler)
+	}
+
+	if handler.maxSize <= 0 {
+		handler.maxSize = defaultFileUploadMaxSize
+	}
+
+	if handler.validationFunc == nil {
+		handler.validationFunc = defaultValidationFunc
+	}
+
+	if handler.nameFuncGenerator == nil {
+		handler.nameFuncGenerator = defaultNameGeneratorFunc
+	}
+
+	if handler.errorResponseHandler == nil {
+		handler.errorResponseHandler = defaultErrorResponseHandler
 	}
 
 	return handler
