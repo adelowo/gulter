@@ -2,9 +2,8 @@ package gulter
 
 import (
 	"fmt"
-	"mime/multipart"
+	"io"
 	"net/http"
-	"time"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -27,41 +26,26 @@ type File struct {
 	Size int64 `json:"size,omitempty"`
 }
 
-func Chain(handlers ...http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	})
-}
-
 // ValidationFunc is a type that can be used to dynamically validate a file
-type ValidationFunc func(f multipart.File) error
+type ValidationFunc func(f File) error
+
+// ErrResponseHandler is a custom error that should be used to handle errors when
+// an upload fails
+type ErrResponseHandler func(error) http.HandlerFunc
 
 // NameGeneratorFunc allows you alter the name of the file before
 // it is ultimately uplaoded and stored. This is neccessarily if
 // you have to adhere to specific formats as an example
 type NameGeneratorFunc func(s string) string
 
-var (
-	// allows all file pass through
-	defaultValidationFunc ValidationFunc = func(f multipart.File) error {
-		return nil
-	}
-
-	// defaultNameGeneratorFunc uses the gulter-158888-originalname to
-	// upload files
-	defaultNameGeneratorFunc NameGeneratorFunc = func(s string) string {
-		return fmt.Sprintf("gulter-%d-%s", time.Now().Unix(), s)
-	}
-
-	defaultFileUploadMaxSize = 1024 * 1024 * 5
-)
-
 type Gulter struct {
-	storage           Storage
-	destination       string
-	maxSize           int64
-	formKeys          []string
-	validationFunc    ValidationFunc
-	nameFuncGenerator NameGeneratorFunc
+	storage              Storage
+	destination          string
+	maxSize              int64
+	formKeys             []string
+	validationFunc       ValidationFunc
+	nameFuncGenerator    NameGeneratorFunc
+	errorResponseHandler ErrResponseHandler
 }
 
 func New(opts ...Option) *Gulter {
@@ -69,6 +53,22 @@ func New(opts ...Option) *Gulter {
 
 	for _, opt := range opts {
 		opt(handler)
+	}
+
+	if handler.maxSize <= 0 {
+		handler.maxSize = defaultFileUploadMaxSize
+	}
+
+	if handler.validationFunc == nil {
+		handler.validationFunc = defaultValidationFunc
+	}
+
+	if handler.nameFuncGenerator == nil {
+		handler.nameFuncGenerator = defaultNameGeneratorFunc
+	}
+
+	if handler.errorResponseHandler == nil {
+		handler.errorResponseHandler = defaultErrorResponseHandler
 	}
 
 	return handler
@@ -79,7 +79,11 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r.Body = http.MaxBytesReader(w, r.Body, h.maxSize)
 
-			_ = r.ParseMultipartForm(h.maxSize)
+			err := r.ParseMultipartForm(h.maxSize)
+			if err != nil {
+				h.errorResponseHandler(err)
+				return
+			}
 
 			var wg errgroup.Group
 
@@ -96,35 +100,42 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 
 						defer f.Close()
 
-						if err := h.validationFunc(f); err != nil {
-							return err
-						}
-
 						uploadedFileName := h.nameFuncGenerator(header.Filename)
 
-						var mimeType string
+						mimeType, err := fetchContentType(f)
+						if err != nil {
+							return fmt.Errorf("gulter: %s has invalid mimetype..%v", key, err)
+						}
+
+						fileData := File{
+							FieldName:        key,
+							OriginalName:     header.Filename,
+							UploadedFileName: uploadedFileName,
+							MimeType:         mimeType,
+						}
+
+						if err := h.validationFunc(fileData); err != nil {
+							return fmt.Errorf("gulter: validation failed for (%s)...%v", key, err)
+						}
 
 						metadata, err := h.storage.Upload(r.Context(), f, &UploadFileOptions{
 							FileName: uploadedFileName,
 						})
 						if err != nil {
-							return err
+							return fmt.Errorf("gulter: could not upload file to storage (%s)...%v", key, err)
 						}
 
-						uploadedFiles[key] = File{
-							FieldName:         key,
-							OriginalName:      header.Filename,
-							UploadedFileName:  uploadedFileName,
-							FolderDestination: metadata.FolderDestination,
-							MimeType:          mimeType,
-							Size:              metadata.Size,
-						}
+						fileData.Size = metadata.Size
+						fileData.FolderDestination = metadata.FolderDestination
+
+						uploadedFiles[key] = fileData
 						return nil
 					})
 				}(key)
 			}
 
 			if err := wg.Wait(); err != nil {
+				h.errorResponseHandler(err)
 				return
 			}
 
@@ -133,4 +144,26 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func fetchContentType(f io.ReadSeeker) (string, error) {
+	buff := make([]byte, 512)
+
+	_, err := f.Seek(0, 0)
+	if err != nil {
+		return "", err
+	}
+
+	bytesRead, err := f.Read(buff)
+	if err != nil && err != io.EOF {
+		return "", err
+	}
+
+	buff = buff[:bytesRead]
+
+	contentType := http.DetectContentType(buff)
+
+	f.Seek(0, 0)
+
+	return contentType, nil
 }

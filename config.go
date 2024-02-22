@@ -1,7 +1,5 @@
 package gulter
 
-import "mime/multipart"
-
 type Option func(*Gulter)
 
 func WithStorage(store Storage) Option {
@@ -28,7 +26,7 @@ func WithFormFields(keys ...string) Option {
 	}
 }
 
-func WithValidationFunc(validationFunc func(f multipart.File) error) Option {
+func WithValidationFunc(validationFunc func(f File) error) Option {
 	return func(g *Gulter) {
 		g.validationFunc = validationFunc
 	}
