@@ -26,7 +26,7 @@ var (
 
 	defaultFileUploadMaxSize int64 = 1024 * 1024 * 5
 
-	defaultErrorResponseHandler ErrResponseHandler = func(_ File, err error) http.HandlerFunc {
+	defaultErrorResponseHandler ErrResponseHandler = func(err error) http.HandlerFunc {
 		return func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintf(w, `{"message" : "could not upload file", "error" : %s}`, err.Error())
@@ -34,7 +34,8 @@ var (
 	}
 )
 
-// MimeTypeValidator makes sure we only accept a valid mimetype
+// MimeTypeValidator makes sure we only accept a valid mimetype.
+// It takes in an array of supported mimes
 func MimeTypeValidator(validMimeTypes ...string) ValidationFunc {
 	return func(f File) error {
 		for _, mimeType := range validMimeTypes {
