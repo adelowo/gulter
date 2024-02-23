@@ -16,7 +16,9 @@ import (
 
 type S3Options struct {
 	Bucket string
-	ACL    types.ObjectCannedACL
+
+	// Only use if the bucket supports ACL
+	ACL types.ObjectCannedACL
 }
 
 type S3Store struct {
@@ -70,12 +72,17 @@ func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 
 	r = io.TeeReader(r, b)
 
-	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
+	n, err := io.Copy(io.Discard, r)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = s.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:   aws.String(s.opts.Bucket),
 		Metadata: opts.Metadata,
 		Key:      aws.String(opts.FileName),
 		ACL:      s.opts.ACL,
-		Body:     r,
+		Body:     b,
 	})
 	if err != nil {
 		return nil, err
@@ -83,6 +90,6 @@ func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 
 	return &gulter.UploadedFileMetadata{
 		FolderDestination: s.opts.Bucket,
-		Size:              int64(b.Len()),
+		Size:              n,
 	}, nil
 }

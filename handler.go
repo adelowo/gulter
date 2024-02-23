@@ -137,7 +137,7 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 			}
 
 			if err := wg.Wait(); err != nil {
-				h.errorResponseHandler(err)
+				h.errorResponseHandler(err).ServeHTTP(w, r)
 				return
 			}
 

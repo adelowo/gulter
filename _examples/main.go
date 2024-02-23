@@ -9,14 +9,24 @@ import (
 )
 
 func main() {
+	s3Store, err := storage.NewS3FromEnvironment(storage.S3Options{
+		Bucket: "fotion",
+	})
+	if err != nil {
+		panic(err.Error())
+	}
+
+	// diskStore,err := storage.NewDiskStorage("/Users/lanreadelowo/gulter-uploads/")
+
 	handler := gulter.New(
-		gulter.WithDestination("/Users/lanreadelowo/yikes"),
 		gulter.WithMaxFileSize(10<<20),
 		// gulter.WithValidationFunc(gulter.ChainValidators(gulter.MimeTypeValidator("image/jpeg"))),
-		gulter.WithStorage(&storage.Disk{}))
+		gulter.WithStorage(s3Store),
+	)
 
 	mux := http.NewServeMux()
 
+	// upload all files with the "name" and "lanre" fields on this route
 	mux.Handle("/", handler.Upload("name", "lanre")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Uploaded file")
 
