@@ -21,8 +21,10 @@ type File struct {
 	// FolderDestination is the folder that holds the uploaded file
 	FolderDestination string `json:"folder_destination,omitempty"`
 
+	// MimeType of the uploaded file
 	MimeType string `json:"mime_type,omitempty"`
 
+	// Size in bytes of the uploaded file
 	Size int64 `json:"size,omitempty"`
 }
 
@@ -135,7 +137,7 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 			}
 
 			if err := wg.Wait(); err != nil {
-				h.errorResponseHandler(err)
+				h.errorResponseHandler(err).ServeHTTP(w, r)
 				return
 			}
 
@@ -163,7 +165,10 @@ func fetchContentType(f io.ReadSeeker) (string, error) {
 
 	contentType := http.DetectContentType(buff)
 
-	f.Seek(0, 0)
+	_, err = f.Seek(0, 0)
+	if err != nil {
+		return "", err
+	}
 
 	return contentType, nil
 }

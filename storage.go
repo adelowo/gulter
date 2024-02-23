@@ -7,6 +7,7 @@ import (
 
 type UploadFileOptions struct {
 	FileName string
+	Metadata map[string]string
 }
 
 type UploadedFileMetadata struct {
