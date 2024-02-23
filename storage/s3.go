@@ -75,6 +75,7 @@ func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 		Metadata: opts.Metadata,
 		Key:      aws.String(opts.FileName),
 		ACL:      s.opts.ACL,
+		Body:     r,
 	})
 	if err != nil {
 		return nil, err
