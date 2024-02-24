@@ -1,6 +1,7 @@
 package gulter
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -42,7 +43,6 @@ type NameGeneratorFunc func(s string) string
 
 type Gulter struct {
 	storage              Storage
-	destination          string
 	maxSize              int64
 	formKeys             []string
 	validationFunc       ValidationFunc
@@ -50,7 +50,7 @@ type Gulter struct {
 	errorResponseHandler ErrResponseHandler
 }
 
-func New(opts ...Option) *Gulter {
+func New(opts ...Option) (*Gulter, error) {
 	handler := &Gulter{}
 
 	for _, opt := range opts {
@@ -73,9 +73,15 @@ func New(opts ...Option) *Gulter {
 		handler.errorResponseHandler = defaultErrorResponseHandler
 	}
 
-	return handler
+	if handler.storage == nil {
+		return nil, errors.New("you must provide a storage backend")
+	}
+
+	return handler, nil
 }
 
+// Upload is a HTTP middleware that takes in a list of form fields and the next
+// HTTP handler to run after the upload prodcess is completed
 func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

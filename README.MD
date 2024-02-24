@@ -1,11 +1,14 @@
 # Gulter
 
-Gulter is a Go HTTP middleware designed to simplify the process of uploading files for your web apps. It follows the standard
-`http.Handler` and `http.HandlerFunc` interfaces so you can always use with any of framework or the standard library router.
+Gulter is a Go HTTP middleware designed to simplify the process of uploading files
+for your web apps. It follows the standard
+`http.Handler` and `http.HandlerFunc` interfaces so you can
+always use with any of framework or the standard library router.
 
-> Name and idea was gotten from the insanely popular multer package in Node.JS that does the same.
+> Name and idea was gotten from the insanely popular multer package
+> in Node.JS that does the same.
 
-### Installation
+## Installation
 
 ```go
 
@@ -13,9 +16,42 @@ go get -u -v github.com/adelowo/gulter
 
 ```
 
-### Usage
+## Usage
 
-#### Standard HTTP router
+Assuming you have a HTML form like this:
+
+```html
+
+<form action="/" method="post" enctype="multipart/form-data">
+  <input type="file" name="form-field-1" />
+  <input type="file" name="form-field-2" />
+</form>
+
+```
+
+To create a new Gulter instance, you can do something like this:
+
+```go
+	handler, _ := gulter.New(
+		gulter.WithMaxFileSize(10<<20),
+		gulter.WithValidationFunc(
+			gulter.ChainValidators(gulter.MimeTypeValidator("image/jpeg", "image/png"),
+				func(f gulter.File) error {
+					// Your own custom validation function on the file here
+					// Else you can really just drop the ChainValidators and use only the MimeTypeValidator or just
+					// one custom validator alone
+					return nil
+				})),
+		gulter.WithStorage(s3Store),
+	)
+```
+
+The `handler` is really just a HTTP middleware with the following signature
+`Upload(keys ...string) func(next http.Handler) http.Handler`. `keys` here
+are the input names from the HTML form, so you can chain this into almost any HTTP
+router,
+
+### Standard HTTP router
 
 ```go
 package main
@@ -38,7 +74,7 @@ func main() {
 
 	// diskStore,err := storage.NewDiskStorage("/Users/lanreadelowo/gulter-uploads/")
 
-	handler := gulter.New(
+	handler, err := gulter.New(
 		gulter.WithMaxFileSize(10<<20),
 		gulter.WithStorage(s3Store),
 	)
@@ -73,9 +109,7 @@ func main() {
 
 ```
 
-
-#### Chi router and other compatible HTTP handlers
-
+### Chi router and other compatible HTTP handlers
 
 ```go
 
@@ -121,4 +155,18 @@ func main() {
 	})
 
 ```
+
+## API
+
+While this middleware automatically uploads your files, sometimes you need
+details about the uploaded file to show to the user, this could be making up the
+image url or path to the image. To get that in your HTTP handler, you can use either:
+
+- `FileFromContext`: retrieve a named input uploaded file.
+- `FilesFromContext`: retrieve all uploaded files
+
+Gulter also ships with two storage implementations at the moment:
+
+- `S3Store` : supports S3 or any compatible service like Minio
+- `DiskStore`: uses a local filesystem backed store to upload files
 
