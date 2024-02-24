@@ -8,12 +8,6 @@ func WithStorage(store Storage) Option {
 	}
 }
 
-func WithDestination(p string) Option {
-	return func(gh *Gulter) {
-		gh.destination = p
-	}
-}
-
 func WithMaxFileSize(i int64) Option {
 	return func(gh *Gulter) {
 		gh.maxSize = i

@@ -18,9 +18,17 @@ func main() {
 
 	// diskStore,err := storage.NewDiskStorage("/Users/lanreadelowo/gulter-uploads/")
 
-	handler := gulter.New(
+	// do not ignore :))
+	handler, _ := gulter.New(
 		gulter.WithMaxFileSize(10<<20),
-		// gulter.WithValidationFunc(gulter.ChainValidators(gulter.MimeTypeValidator("image/jpeg"))),
+		gulter.WithValidationFunc(
+			gulter.ChainValidators(gulter.MimeTypeValidator("image/jpeg", "image/png"),
+				func(f gulter.File) error {
+					// Your own custom validation function on the file here
+					// Else you can really just drop the ChainValidators and use only the MimeTypeValidator or just
+					// one custom validator alone
+					return nil
+				})),
 		gulter.WithStorage(s3Store),
 	)
 
