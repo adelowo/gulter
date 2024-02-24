@@ -83,7 +83,7 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 
 			err := r.ParseMultipartForm(h.maxSize)
 			if err != nil {
-				h.errorResponseHandler(err)
+				h.errorResponseHandler(err).ServeHTTP(w, r)
 				return
 			}
 
