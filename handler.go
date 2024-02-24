@@ -44,7 +44,6 @@ type NameGeneratorFunc func(s string) string
 type Gulter struct {
 	storage              Storage
 	maxSize              int64
-	formKeys             []string
 	validationFunc       ValidationFunc
 	nameFuncGenerator    NameGeneratorFunc
 	errorResponseHandler ErrResponseHandler

@@ -8,25 +8,22 @@ func WithStorage(store Storage) Option {
 	}
 }
 
+// WithMaxFileSize allows you limit the size of file uploads to accept
 func WithMaxFileSize(i int64) Option {
 	return func(gh *Gulter) {
 		gh.maxSize = i
 	}
 }
 
-func WithFormFields(keys ...string) Option {
-	return func(gh *Gulter) {
-		gh.formKeys = append(gh.formKeys, keys...)
-	}
-}
-
-func WithValidationFunc(validationFunc func(f File) error) Option {
+func WithValidationFunc(validationFunc ValidationFunc) Option {
 	return func(g *Gulter) {
 		g.validationFunc = validationFunc
 	}
 }
 
-func WithNameFuncGenerator(nameFunc func(string) string) Option {
+// WithNameFuncGenerator allows you configure how you'd like to rename your
+// uploaded files
+func WithNameFuncGenerator(nameFunc NameGeneratorFunc) Option {
 	return func(g *Gulter) {
 		g.nameFuncGenerator = nameFunc
 	}
