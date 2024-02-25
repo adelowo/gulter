@@ -11,8 +11,9 @@ type UploadFileOptions struct {
 }
 
 type UploadedFileMetadata struct {
-	FolderDestination string `json:"folder_destination"`
-	Size              int64  `json:"size"`
+	FolderDestination string `json:"folder_destination,omitempty"`
+	Key               string `json:"key,omitempty"`
+	Size              int64  `json:"size,omitempty"`
 }
 
 type Storage interface {
