@@ -6,6 +6,7 @@ import (
 
 	"github.com/adelowo/gulter"
 	"github.com/adelowo/gulter/storage"
+	"github.com/google/uuid"
 )
 
 func main() {
@@ -17,6 +18,10 @@ func main() {
 	}
 
 	// diskStore,err := storage.NewDiskStorage("/Users/lanreadelowo/gulter-uploads/")
+	//
+	_ = s3Store
+
+	disk, _ := storage.NewDiskStorage("/Users/lanreadelowo/yikes/")
 
 	// do not ignore :))
 	handler, _ := gulter.New(
@@ -29,13 +34,16 @@ func main() {
 					// one custom validator alone
 					return nil
 				})),
-		gulter.WithStorage(s3Store),
+		gulter.WithNameFuncGenerator(func(s string) string {
+			return uuid.NewString()
+		}),
+		gulter.WithStorage(disk),
 	)
 
 	mux := http.NewServeMux()
 
 	// upload all files with the "name" and "lanre" fields on this route
-	mux.Handle("/", handler.Upload("name", "lanre")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/", handler.Upload("lanre")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Uploaded file")
 
 		f, err := gulter.FilesFromContext(r)

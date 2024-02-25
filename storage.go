@@ -21,3 +21,5 @@ type Storage interface {
 	Upload(context.Context, io.Reader, *UploadFileOptions) (*UploadedFileMetadata, error)
 	io.Closer
 }
+
+//go:generate mockgen -destination=mocks/storage.go -source=storage.go -package mocks

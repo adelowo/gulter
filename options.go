@@ -7,11 +7,6 @@ import (
 	"time"
 )
 
-func ChainHandlers(handlers ...http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	})
-}
-
 var (
 	// allows all file pass through
 	defaultValidationFunc ValidationFunc = func(f File) error {

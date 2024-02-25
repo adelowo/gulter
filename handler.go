@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -44,7 +45,6 @@ type NameGeneratorFunc func(s string) string
 type Gulter struct {
 	storage              Storage
 	maxSize              int64
-	formKeys             []string
 	validationFunc       ValidationFunc
 	nameFuncGenerator    NameGeneratorFunc
 	errorResponseHandler ErrResponseHandler
@@ -174,6 +174,16 @@ func fetchContentType(f io.ReadSeeker) (string, error) {
 	_, err = f.Seek(0, 0)
 	if err != nil {
 		return "", err
+	}
+
+	// text/plain; charset=utf-8
+	// we do not want users to have to specify such long mimetypes
+	// Specifying text/plain should be enough really
+	// If we have such mimetypes with the charset included, just strip
+	// it out completely
+	splitType := strings.Split(contentType, ";")
+	if len(splitType) == 2 {
+		contentType = splitType[0]
 	}
 
 	return contentType, nil
