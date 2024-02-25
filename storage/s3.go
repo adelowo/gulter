@@ -91,5 +91,6 @@ func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 	return &gulter.UploadedFileMetadata{
 		FolderDestination: s.opts.Bucket,
 		Size:              n,
+		Key:               opts.FileName,
 	}, nil
 }
