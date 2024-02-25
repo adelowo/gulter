@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/adelowo/gulter"
@@ -19,8 +22,13 @@ func TestGulter(t *testing.T) {
 	tt := []struct {
 		name               string
 		maxFileSize        int64
+		pathToFile         string
 		fn                 func(store *mocks.MockStorage, size int64)
 		expectedStatusCode int
+		validMimeTypes     []string
+		// ignoreFormField instructs the test to not add the
+		// multipar form data part to the request
+		ignoreFormField bool
 	}{
 		{
 			name:        "uploading succeeds",
@@ -34,9 +42,42 @@ func TestGulter(t *testing.T) {
 					Times(1)
 			},
 			expectedStatusCode: http.StatusAccepted,
+			pathToFile:         "gulter.md",
+			validMimeTypes:     []string{"text/markdown", "text/plain"},
 		},
 		{
-			name:        "upload fails",
+			name:        "upload fails because form field does not exist",
+			maxFileSize: 1024,
+			fn: func(store *mocks.MockStorage, size int64) {
+				store.EXPECT().
+					Upload(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(&gulter.UploadedFileMetadata{
+						Size: size,
+					}, errors.New("could not upload file")).
+					Times(0) // make sure this is never called
+			},
+			expectedStatusCode: http.StatusInternalServerError,
+			pathToFile:         "gulter.md",
+			validMimeTypes:     []string{"image/png", "application/pdf"},
+			ignoreFormField:    true,
+		},
+		{
+			name:        "upload fails because of mimetype validation constraints",
+			maxFileSize: 1024,
+			fn: func(store *mocks.MockStorage, size int64) {
+				store.EXPECT().
+					Upload(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(&gulter.UploadedFileMetadata{
+						Size: size,
+					}, errors.New("could not upload file")).
+					Times(0) // make sure this is never called
+			},
+			expectedStatusCode: http.StatusInternalServerError,
+			pathToFile:         "gulter.md",
+			validMimeTypes:     []string{"image/png", "application/pdf"},
+		},
+		{
+			name:        "upload fails because of storage layer",
 			maxFileSize: 1024,
 			fn: func(store *mocks.MockStorage, size int64) {
 				store.EXPECT().
@@ -47,6 +88,8 @@ func TestGulter(t *testing.T) {
 					Times(1)
 			},
 			expectedStatusCode: http.StatusInternalServerError,
+			pathToFile:         "gulter.md",
+			validMimeTypes:     []string{"text/markdown", "text/plain"},
 		},
 	}
 
@@ -58,7 +101,9 @@ func TestGulter(t *testing.T) {
 			storage := mocks.NewMockStorage(ctrl)
 
 			handler, err := gulter.New(gulter.WithMaxFileSize(v.maxFileSize),
-				gulter.WithStorage(storage))
+				gulter.WithStorage(storage),
+				gulter.WithValidationFunc(gulter.MimeTypeValidator(v.validMimeTypes...)),
+			)
 
 			require.NoError(t, err)
 
@@ -66,10 +111,17 @@ func TestGulter(t *testing.T) {
 
 			multipartWriter := multipart.NewWriter(buffer)
 
-			f, err := multipartWriter.CreateFormFile("form-field", "gulter.txt")
+			var formFieldWriter io.Writer
+			if !v.ignoreFormField {
+				var err error
+				formFieldWriter, err = multipartWriter.CreateFormFile("form-field", v.pathToFile)
+				require.NoError(t, err)
+			}
+
+			fileToUpload, err := os.Open(filepath.Join("testdata", v.pathToFile))
 			require.NoError(t, err)
 
-			n, err := f.Write([]byte(`lanre is working on something`))
+			n, err := io.Copy(formFieldWriter, fileToUpload)
 			require.NoError(t, err)
 
 			v.fn(storage, int64(n))
@@ -86,7 +138,7 @@ func TestGulter(t *testing.T) {
 
 				require.NoError(t, err)
 
-				require.Equal(t, "gulter.txt", file.OriginalName)
+				require.Equal(t, v.pathToFile, file.OriginalName)
 
 				w.WriteHeader(http.StatusAccepted)
 				fmt.Fprintf(w, "successfully uploade the file")
