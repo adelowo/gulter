@@ -23,6 +23,9 @@ type File struct {
 	// FolderDestination is the folder that holds the uploaded file
 	FolderDestination string `json:"folder_destination,omitempty"`
 
+	// StorageKey can be used to retrieve the file from the storage backend
+	StorageKey string `json:"storage_key,omitempty"`
+
 	// MimeType of the uploaded file
 	MimeType string `json:"mime_type,omitempty"`
 
@@ -135,6 +138,7 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 
 						fileData.Size = metadata.Size
 						fileData.FolderDestination = metadata.FolderDestination
+						fileData.StorageKey = metadata.Key
 
 						uploadedFiles[key] = fileData
 						return nil

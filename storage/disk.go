@@ -41,5 +41,6 @@ func (d *Disk) Upload(ctx context.Context, r io.Reader,
 	return &gulter.UploadedFileMetadata{
 		FolderDestination: d.destinationFolder,
 		Size:              n,
+		Key:               opts.FileName,
 	}, err
 }
