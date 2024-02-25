@@ -2,6 +2,7 @@ package gulter_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -14,9 +15,27 @@ import (
 
 	"github.com/adelowo/gulter"
 	"github.com/adelowo/gulter/mocks"
+	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
+
+func verifyMatch(t *testing.T, v interface{}) {
+	g := goldie.New(t, goldie.WithFixtureDir("./testdata/golden"))
+
+	b := new(bytes.Buffer)
+
+	var err error
+
+	if d, ok := v.(*httptest.ResponseRecorder); ok {
+		_, err = io.Copy(b, d.Body)
+	} else {
+		err = json.NewEncoder(b).Encode(v)
+	}
+
+	require.NoError(t, err)
+	g.Assert(t, t.Name(), b.Bytes())
+}
 
 func TestGulter(t *testing.T) {
 	tt := []struct {
@@ -91,6 +110,21 @@ func TestGulter(t *testing.T) {
 			pathToFile:         "gulter.md",
 			validMimeTypes:     []string{"text/markdown", "text/plain"},
 		},
+		{
+			name:        "upload fails because file is too large",
+			maxFileSize: 1024,
+			fn: func(store *mocks.MockStorage, size int64) {
+				store.EXPECT().
+					Upload(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(&gulter.UploadedFileMetadata{
+						Size: size,
+					}, errors.New("could not upload file")).
+					Times(0) // never call this
+			},
+			expectedStatusCode: http.StatusInternalServerError,
+			pathToFile:         "image.jpg",
+			validMimeTypes:     []string{"image/jpeg"},
+		},
 	}
 
 	for _, v := range tt {
@@ -111,7 +145,8 @@ func TestGulter(t *testing.T) {
 
 			multipartWriter := multipart.NewWriter(buffer)
 
-			var formFieldWriter io.Writer
+			var formFieldWriter io.Writer = bytes.NewBuffer(nil)
+
 			if !v.ignoreFormField {
 				var err error
 				formFieldWriter, err = multipartWriter.CreateFormFile("form-field", v.pathToFile)
@@ -128,7 +163,7 @@ func TestGulter(t *testing.T) {
 
 			require.NoError(t, multipartWriter.Close())
 
-			w := httptest.NewRecorder()
+			recorder := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodPatch, "/", buffer)
 
 			r.Header.Set("Content-Type", multipartWriter.FormDataContentType())
@@ -142,9 +177,10 @@ func TestGulter(t *testing.T) {
 
 				w.WriteHeader(http.StatusAccepted)
 				fmt.Fprintf(w, "successfully uploade the file")
-			})).ServeHTTP(w, r)
+			})).ServeHTTP(recorder, r)
 
-			require.Equal(t, v.expectedStatusCode, w.Code)
+			require.Equal(t, v.expectedStatusCode, recorder.Result().StatusCode)
+			verifyMatch(t, recorder)
 		})
 	}
 }
