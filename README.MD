@@ -171,3 +171,32 @@ Gulter also ships with two storage implementations at the moment:
 - `DiskStore`: uses a local filesystem backed store to upload files
 - `CloudinaryStore`: uploads file to cloudinary
 
+
+## Writing your custom validator logic
+
+sometimes, you could have some custom logic to validate uploads, in this example
+below, we limit the size of the upload based on the mimeypes of the uploaded files
+
+```go
+
+var customValidator gulter.ValidationFunc = func(f gulter.File) error {
+	switch f.MimeType {
+	case "image/png":
+		if f.Size > 4096 {
+			return errors.New("file size too large")
+		}
+
+		return nil
+
+	case "application/pdf":
+		if f.Size > (1024 * 10) {
+			return errors.New("file size too large")
+		}
+
+		return nil
+	default:
+		return nil
+	}
+}
+
+```
