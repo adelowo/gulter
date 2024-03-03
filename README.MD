@@ -167,7 +167,7 @@ image url or path to the image. To get that in your HTTP handler, you can use ei
 
 Gulter also ships with two storage implementations at the moment:
 
-- `S3Store` : supports S3 or any compatible service like Minio
+- `S3Store` : supports S3 or any compatible service like Minio, Cloudflare R2, Digitalocean spaces and others
 - `DiskStore`: uses a local filesystem backed store to upload files
 - `CloudinaryStore`: uploads file to cloudinary
 
