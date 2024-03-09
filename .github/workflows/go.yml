@@ -32,5 +32,12 @@ jobs:
       run: go mod download && go mod verify
 
     - name: Run all tests
-      run: go test -tags integration -v ./...
+      run: |
+        go test -v -tags integration -cover ./... -coverprofile coverage.out -coverpkg ./...
+        go tool cover -func coverage.out -o coverage.out  
 
+    - name: Go Coverage Badge
+      uses: tj-actions/coverage-badge-go@v1
+      with:
+        green: 80
+        filename: coverage.out
