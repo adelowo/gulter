@@ -41,3 +41,10 @@ jobs:
       with:
         green: 80
         filename: coverage.out
+
+    - name: Push Changes
+      if: steps.auto-commit-action.outputs.changes_detected == 'true'
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ github.token }}
+        branch: ${{ github.ref }}
