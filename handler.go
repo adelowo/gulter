@@ -18,7 +18,7 @@ type File struct {
 	OriginalName string `json:"original_name,omitempty"`
 	// UploadedFileName denotes the name of the file when it was ultimately
 	// uploaded to the storage layer. The distinction is important because of
-	// potential changes to the file nmae that may be done
+	// potential changes to the file name that may be done
 	UploadedFileName string `json:"uploaded_file_name,omitempty"`
 	// FolderDestination is the folder that holds the uploaded file
 	FolderDestination string `json:"folder_destination,omitempty"`
@@ -41,7 +41,7 @@ type ValidationFunc func(f File) error
 type ErrResponseHandler func(error) http.HandlerFunc
 
 // NameGeneratorFunc allows you alter the name of the file before
-// it is ultimately uplaoded and stored. This is neccessarily if
+// it is ultimately uplaoded and stored. This is necessarily if
 // you have to adhere to specific formats as an example
 type NameGeneratorFunc func(s string) string
 

@@ -1,5 +1,9 @@
 # Gulter
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/adelowo/gulter.svg)](https://pkg.go.dev/github.com/adelowo/gulter)
+[![Go Report Card](https://goreportcard.com/badge/github.com/adelowo/gulter)](https://goreportcard.com/report/github.com/adelowo/gulter)
+
+
 Gulter is a Go HTTP middleware designed to simplify the process of uploading files
 for your web apps. It follows the standard
 `http.Handler` and `http.HandlerFunc` interfaces so you can
