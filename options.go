@@ -43,7 +43,7 @@ func MimeTypeValidator(validMimeTypes ...string) ValidationFunc {
 	}
 }
 
-// ChainValidators returns a validator that accepts multiple validating criterias
+// ChainValidators returns a validator that accepts multiple validating critera
 func ChainValidators(validators ...ValidationFunc) ValidationFunc {
 	return func(f File) error {
 		for _, validator := range validators {
