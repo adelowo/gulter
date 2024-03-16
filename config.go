@@ -28,3 +28,9 @@ func WithNameFuncGenerator(nameFunc NameGeneratorFunc) Option {
 		g.nameFuncGenerator = nameFunc
 	}
 }
+
+func WithIgnoreNonExistentKey(ignore bool) Option {
+	return func(g *Gulter) {
+		g.ignoreNonExistentKeys = ignore
+	}
+}
