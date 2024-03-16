@@ -113,7 +113,6 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 					wg.Go(func() error {
 						f, header, err := r.FormFile(key)
 						if err != nil {
-
 							if h.ignoreNonExistentKeys {
 								return nil
 							}
