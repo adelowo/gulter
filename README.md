@@ -3,7 +3,6 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/adelowo/gulter.svg)](https://pkg.go.dev/github.com/adelowo/gulter)
 [![Go Report Card](https://goreportcard.com/badge/github.com/adelowo/gulter)](https://goreportcard.com/report/github.com/adelowo/gulter)
 
-
 Gulter is a Go HTTP middleware designed to simplify the process of uploading files
 for your web apps. It follows the standard
 `http.Handler` and `http.HandlerFunc` interfaces so you can
@@ -53,7 +52,8 @@ To create a new Gulter instance, you can do something like this:
 The `handler` is really just a HTTP middleware with the following signature
 `Upload(keys ...string) func(next http.Handler) http.Handler`. `keys` here
 are the input names from the HTML form, so you can chain this into almost any HTTP
-router,
+router.
+
 
 ### Standard HTTP router
 
@@ -175,6 +175,13 @@ Gulter also ships with two storage implementations at the moment:
 - `DiskStore`: uses a local filesystem backed store to upload files
 - `CloudinaryStore`: uploads file to cloudinary
 
+## Ignoring non existent keys in the multipart Request
+
+Sometimes, the keys you have configured the middleware might get dropped from the
+frontend for some reason, ideally the middleware fails if it cannot find a
+configured key in the request. To disable this behavior and ignore the missing
+key, you can make use of the `WithIgnoreNonExistentKey(true)` option to prevent the
+middleware from causing an error when such keys do not exists
 
 ## Writing your custom validator logic
 

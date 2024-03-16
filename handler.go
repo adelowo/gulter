@@ -46,8 +46,15 @@ type ErrResponseHandler func(error) http.HandlerFunc
 type NameGeneratorFunc func(s string) string
 
 type Gulter struct {
-	storage              Storage
-	maxSize              int64
+	storage Storage
+	maxSize int64
+
+	// when you configure the middleware, you usually provide a list of
+	// keys to retrieve the files from. If any of these keys do not exists,
+	// the handler fails.
+	// If this option is set to true, the value is just skipped instead
+	ignoreNonExistentKeys bool
+
 	validationFunc       ValidationFunc
 	nameFuncGenerator    NameGeneratorFunc
 	errorResponseHandler ErrResponseHandler
@@ -106,6 +113,10 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 					wg.Go(func() error {
 						f, header, err := r.FormFile(key)
 						if err != nil {
+							if h.ignoreNonExistentKeys {
+								return nil
+							}
+
 							return err
 						}
 

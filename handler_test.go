@@ -48,6 +48,8 @@ func TestGulter(t *testing.T) {
 		// ignoreFormField instructs the test to not add the
 		// multipar form data part to the request
 		ignoreFormField bool
+
+		useIgnoreSkipOpt bool
 	}{
 		{
 			name:        "uploading succeeds",
@@ -79,6 +81,24 @@ func TestGulter(t *testing.T) {
 			pathToFile:         "gulter.md",
 			validMimeTypes:     []string{"image/png", "application/pdf"},
 			ignoreFormField:    true,
+		},
+		{
+			// this test case will use the WithIgnore option
+			name:        "upload middleware succeeds even if the form field does not exist",
+			maxFileSize: 1024,
+			fn: func(store *mocks.MockStorage, size int64) {
+				store.EXPECT().
+					Upload(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(&gulter.UploadedFileMetadata{
+						Size: size,
+					}, errors.New("could not upload file")).
+					Times(0) // make sure this is never called
+			},
+			expectedStatusCode: http.StatusAccepted,
+			pathToFile:         "gulter.md",
+			validMimeTypes:     []string{"image/png", "application/pdf"},
+			ignoreFormField:    true,
+			useIgnoreSkipOpt:   true,
 		},
 		{
 			name:        "upload fails because of mimetype validation constraints",
@@ -134,11 +154,17 @@ func TestGulter(t *testing.T) {
 
 			storage := mocks.NewMockStorage(ctrl)
 
-			handler, err := gulter.New(gulter.WithMaxFileSize(v.maxFileSize),
+			opts := []gulter.Option{
+				gulter.WithMaxFileSize(v.maxFileSize),
 				gulter.WithStorage(storage),
 				gulter.WithValidationFunc(gulter.MimeTypeValidator(v.validMimeTypes...)),
-			)
+			}
 
+			if v.useIgnoreSkipOpt {
+				opts = append(opts, gulter.WithIgnoreNonExistentKey(true))
+			}
+
+			handler, err := gulter.New(opts...)
 			require.NoError(t, err)
 
 			buffer := bytes.NewBuffer(nil)
@@ -164,11 +190,17 @@ func TestGulter(t *testing.T) {
 			require.NoError(t, multipartWriter.Close())
 
 			recorder := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodPatch, "/", buffer)
 
+			r := httptest.NewRequest(http.MethodPatch, "/", buffer)
 			r.Header.Set("Content-Type", multipartWriter.FormDataContentType())
 
 			handler.Upload("form-field")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if v.useIgnoreSkipOpt {
+					w.WriteHeader(http.StatusAccepted)
+					fmt.Fprintf(w, "skipping check since we did not upload any file")
+					return
+				}
+
 				file, err := gulter.FileFromContext(r, "form-field")
 
 				require.NoError(t, err)
@@ -176,7 +208,7 @@ func TestGulter(t *testing.T) {
 				require.Equal(t, v.pathToFile, file.OriginalName)
 
 				w.WriteHeader(http.StatusAccepted)
-				fmt.Fprintf(w, "successfully uploade the file")
+				fmt.Fprintf(w, "successfully uploaded the file")
 			})).ServeHTTP(recorder, r)
 
 			require.Equal(t, v.expectedStatusCode, recorder.Result().StatusCode)
