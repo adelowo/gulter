@@ -76,8 +76,6 @@ func main() {
 		panic(err.Error())
 	}
 
-	// diskStore,err := storage.NewDiskStorage("/Users/lanreadelowo/gulter-uploads/")
-
 	handler, err := gulter.New(
 		gulter.WithMaxFileSize(10<<20),
 		gulter.WithStorage(s3Store),
