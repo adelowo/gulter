@@ -47,10 +47,10 @@ jobs:
           github_token: ${{ github.token }}
           branch: ${{ github.ref }}
 
-      - name: Test Local Action
-        id: test-action
-        uses: adelowo/enforce-gomod-version@v0.1.0
+      - name: Enforce module version
+        uses: adelowo/enforce-gomod-version@v0.2.0
         with:
+          ## see go.mod, version is v0.6.0
+          ## fail this intentionally
           modules: |
             golang.org/x/sync => v0.6.1
-            github.com/aws/aws-sdk-go-v2 => v1.25.1
