@@ -9,7 +9,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.5.3
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/mock v0.4.0
-	golang.org/x/sync v0.6.0
+	golang.org/x/sync v0.7.0
 )
 
 require (
