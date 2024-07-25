@@ -34,3 +34,9 @@ func WithIgnoreNonExistentKey(ignore bool) Option {
 		g.ignoreNonExistentKeys = ignore
 	}
 }
+
+func WithErrorResponseHandler(errHandler ErrResponseHandler) Option {
+	return func(g *Gulter) {
+		g.errorResponseHandler = errHandler
+	}
+}
