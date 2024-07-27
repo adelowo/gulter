@@ -108,50 +108,58 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 			uploadedFiles := make(Files, len(keys))
 
 			for _, key := range keys {
-				// still need this for users pre go 1.22
+				// TODO(adelowo): remove this when we drop support for < 1.22
 				func(key string) {
 					wg.Go(func() error {
-						f, header, err := r.FormFile(key)
-						if err != nil {
+
+						fileHeaders, ok := r.MultipartForm.File[key]
+						if !ok {
 							if h.ignoreNonExistentKeys {
 								return nil
 							}
 
-							return err
+							return fmt.Errorf("files could not be found in key (%s) from http request", key)
 						}
 
-						defer f.Close()
+						for _, header := range fileHeaders {
 
-						uploadedFileName := h.nameFuncGenerator(header.Filename)
+							f, err := header.Open()
 
-						mimeType, err := fetchContentType(f)
-						if err != nil {
-							return fmt.Errorf("gulter: %s has invalid mimetype..%v", key, err)
+							defer f.Close()
+
+							uploadedFileName := h.nameFuncGenerator(header.Filename)
+
+							mimeType, err := fetchContentType(f)
+							if err != nil {
+								return fmt.Errorf("gulter: %s has invalid mimetype..%v", key, err)
+							}
+
+							fileData := File{
+								FieldName:        key,
+								OriginalName:     header.Filename,
+								UploadedFileName: uploadedFileName,
+								MimeType:         mimeType,
+							}
+
+							if err := h.validationFunc(fileData); err != nil {
+								return fmt.Errorf("gulter: validation failed for (%s)...%v", key, err)
+							}
+
+							metadata, err := h.storage.Upload(r.Context(), f, &UploadFileOptions{
+								FileName: uploadedFileName,
+							})
+							if err != nil {
+								return fmt.Errorf("gulter: could not upload file to storage (%s)...%v", key, err)
+							}
+
+							fileData.Size = metadata.Size
+							fileData.FolderDestination = metadata.FolderDestination
+							fileData.StorageKey = metadata.Key
+
+							uploadedFiles[key] = fileData
+							return nil
 						}
 
-						fileData := File{
-							FieldName:        key,
-							OriginalName:     header.Filename,
-							UploadedFileName: uploadedFileName,
-							MimeType:         mimeType,
-						}
-
-						if err := h.validationFunc(fileData); err != nil {
-							return fmt.Errorf("gulter: validation failed for (%s)...%v", key, err)
-						}
-
-						metadata, err := h.storage.Upload(r.Context(), f, &UploadFileOptions{
-							FileName: uploadedFileName,
-						})
-						if err != nil {
-							return fmt.Errorf("gulter: could not upload file to storage (%s)...%v", key, err)
-						}
-
-						fileData.Size = metadata.Size
-						fileData.FolderDestination = metadata.FolderDestination
-						fileData.StorageKey = metadata.Key
-
-						uploadedFiles[key] = fileData
 						return nil
 					})
 				}(key)
