@@ -19,7 +19,7 @@ const (
 	ErrNoFilesUploaded = errorMsg("gulter: no uploadable files found in request")
 )
 
-type Files map[string]File
+type Files map[string][]File
 
 func writeFilesToContext(ctx context.Context,
 	f Files,
@@ -30,21 +30,11 @@ func writeFilesToContext(ctx context.Context,
 	}
 
 	for _, v := range f {
-		existingFiles[v.FieldName] = v
+		// all the files should have the same form field,
+		// so safe to use any index
+		existingFiles[v[0].FieldName] = append(existingFiles[v[0].FieldName], v...)
 	}
 
-	return context.WithValue(ctx, fileKey, existingFiles)
-}
-
-func writeFileToContext(ctx context.Context,
-	f File, formField string,
-) context.Context {
-	existingFiles, ok := ctx.Value(fileKey).(Files)
-	if !ok {
-		existingFiles = Files{}
-	}
-
-	existingFiles[formField] = f
 	return context.WithValue(ctx, fileKey, existingFiles)
 }
 
@@ -58,21 +48,13 @@ func FilesFromContext(r *http.Request) (Files, error) {
 	return files, nil
 }
 
-// FileFromContext retrieves the uploaded file with
-// the given formfield value. This form field is what
-// was sent from the html/multipart form
-func FileFromContext(r *http.Request,
-	formField string,
-) (File, error) {
-	files, err := FilesFromContext(r)
-	if err != nil {
-		return File{}, err
-	}
-
-	f, ok := files[formField]
+// FilesFromContextWithKey returns  all files that have been uploaded during the request
+// and sorts by the provided form field
+func FilesFromContextWithKey(r *http.Request, key string) ([]File, error) {
+	files, ok := r.Context().Value(fileKey).(Files)
 	if !ok {
-		return File{}, ErrNoFilesUploaded
+		return nil, ErrNoFilesUploaded
 	}
 
-	return f, nil
+	return files[key], nil
 }
