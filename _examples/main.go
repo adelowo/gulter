@@ -10,16 +10,6 @@ import (
 )
 
 func main() {
-	s3Store, err := storage.NewS3FromEnvironment(storage.S3Options{
-		Bucket: "fotion",
-	})
-	if err != nil {
-		panic(err.Error())
-	}
-
-	// diskStore,err := storage.NewDiskStorage("/Users/lanreadelowo/gulter-uploads/")
-	//
-	_ = s3Store
 
 	disk, _ := storage.NewDiskStorage("/Users/lanreadelowo/yikes/")
 
@@ -52,7 +42,7 @@ func main() {
 			return
 		}
 
-		ff, err := gulter.FileFromContext(r, "lanre")
+		ff, err := gulter.FilesFromContextWithKey(r, "lanre")
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -61,7 +51,7 @@ func main() {
 		fmt.Printf("%+v", ff)
 
 		for _, v := range f {
-			fmt.Printf("%+v", v)
+			fmt.Printf("%+v\n", v)
 			fmt.Println()
 		}
 	})))

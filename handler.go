@@ -159,7 +159,6 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 							fileData.StorageKey = metadata.Key
 
 							uploadedFiles[key] = append(uploadedFiles[key], fileData)
-							return nil
 						}
 
 						return nil

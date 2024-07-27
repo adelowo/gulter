@@ -8,6 +8,8 @@ for your web apps. It follows the standard
 `http.Handler` and `http.HandlerFunc` interfaces so you can
 always use with any of framework or the standard library router.
 
+Multiple files per form field are already supported
+
 > Name and idea was gotten from the insanely popular multer package
 > in Node.JS that does the same.
 
@@ -84,13 +86,15 @@ func main() {
  mux.Handle("/", handler.Upload("name", "lanre")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
   fmt.Println("Uploaded file")
 
+  // return all uploaded files
   f, err := gulter.FilesFromContext(r)
   if err != nil {
    fmt.Println(err)
    return
   }
 
-  ff, err := gulter.FileFromContext(r, "lanre")
+  // return uploaded files with the form field "lanre"
+  ff, err := gulter.FilesFromContextWithKey(r, "lanre")
   if err != nil {
    fmt.Println(err)
    return
@@ -119,8 +123,6 @@ func main() {
   panic(err.Error())
  }
 
- // diskStore,err := storage.NewDiskStorage("/Users/lanreadelowo/gulter-uploads/")
-
  handler := gulter.New(
   gulter.WithMaxFileSize(10<<20),
   gulter.WithValidationFunc(gulter.ChainValidators(gulter.MimeTypeValidator("image/jpeg", "image/png"))),
@@ -139,7 +141,7 @@ func main() {
    return
   }
 
-  ff, err := gulter.FileFromContext(r, "form-field-1") // or form-field-2
+  ff, err := gulter.FilesFromContextWithKey(r, "form-field-1") // or form-field-2
   if err != nil {
    fmt.Println(err)
    return
@@ -180,7 +182,7 @@ middleware from causing an error when such keys do not exists
 
 ## Writing your custom validator logic
 
-sometimes, you could have some custom logic to validate uploads, in this example
+Sometimes, you could have some custom logic to validate uploads, in this example
 below, we limit the size of the upload based on the mimeypes of the uploaded files
 
 ```go
