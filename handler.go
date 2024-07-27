@@ -121,6 +121,8 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 							return fmt.Errorf("files could not be found in key (%s) from http request", key)
 						}
 
+						uploadedFiles[key] = make([]File, 0, len(fileHeaders))
+
 						for _, header := range fileHeaders {
 
 							f, err := header.Open()
@@ -156,7 +158,7 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 							fileData.FolderDestination = metadata.FolderDestination
 							fileData.StorageKey = metadata.Key
 
-							uploadedFiles[key] = fileData
+							uploadedFiles[key] = append(uploadedFiles[key], fileData)
 							return nil
 						}
 

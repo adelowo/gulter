@@ -201,11 +201,11 @@ func TestGulter(t *testing.T) {
 					return
 				}
 
-				file, err := gulter.FileFromContext(r, "form-field")
+				file, err := gulter.FilesFromContextWithKey(r, "form-field")
 
 				require.NoError(t, err)
 
-				require.Equal(t, v.pathToFile, file.OriginalName)
+				require.Equal(t, v.pathToFile, file[0].OriginalName)
 
 				w.WriteHeader(http.StatusAccepted)
 				fmt.Fprintf(w, "successfully uploaded the file")
