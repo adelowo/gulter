@@ -11,11 +11,11 @@ always use with any of framework or the standard library router.
 Multiple files per form field are already supported
 
 > Name and idea was gotten from the insanely popular multer package
-> in Node.JS that does the same.
+> in NodeJS that does the same.
 
 ## Installation
 
-```go
+```sh
 
 go get -u -v github.com/adelowo/gulter
 
@@ -163,12 +163,12 @@ While this middleware automatically uploads your files, sometimes you need
 details about the uploaded file to show to the user, this could be making up the
 image url or path to the image. To get that in your HTTP handler, you can use either:
 
-- `FileFromContext`: retrieve a named input uploaded file.
+- `FilesFromContextWithKey`: retrieve a named input uploaded file.
 - `FilesFromContext`: retrieve all uploaded files
 
 Gulter also ships with two storage implementations at the moment:
 
-- `S3Store` : supports S3 or any compatible service like Minio, Cloudflare R2, Digitalocean spaces and others
+- `S3Store` : supports S3 or any compatible service like Minio,R2 & others
 - `DiskStore`: uses a local filesystem backed store to upload files
 - `CloudinaryStore`: uploads file to cloudinary
 
