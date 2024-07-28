@@ -180,6 +180,24 @@ configured key in the request. To disable this behavior and ignore the missing
 key, you can make use of the `WithIgnoreNonExistentKey(true)` option to prevent the
 middleware from causing an error when such keys do not exists
 
+## Customizing the error response
+
+Since Gulter is a middleware that runs, it returns an error to the client if found,
+this might not match your existing structure, so to configure the response, use the
+`WithErrorResponseHandler`. The default is shown below and can be used as a template
+to define yours.
+
+```go
+
+ errHandler ErrResponseHandler = func(err error) http.HandlerFunc {
+  return func(w http.ResponseWriter, _ *http.Request) {
+   w.Header().Set("Content-Type", "application/json")
+   w.WriteHeader(http.StatusInternalServerError)
+   fmt.Fprintf(w, `{"message" : "could not upload file", "error" : %s}`, err.Error())
+  }
+ }
+```
+
 ## Writing your custom validator logic
 
 Sometimes, you could have some custom logic to validate uploads, in this example
