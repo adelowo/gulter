@@ -36,9 +36,7 @@ func NewS3FromConfig(cfg aws.Config, opts S3Options) (*S3Store, error) {
 	}
 
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
-		if opts.UsePathStyle {
-			o.UsePathStyle = true
-		}
+		o.UsePathStyle = opts.UsePathStyle
 
 		if opts.DebugMode {
 			o.ClientLogMode = aws.LogSigning | aws.LogRequest | aws.LogResponseWithBody
@@ -62,9 +60,7 @@ func NewS3FromEnvironment(opts S3Options) (*S3Store, error) {
 	}
 
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
-		if opts.UsePathStyle {
-			o.UsePathStyle = true
-		}
+		o.UsePathStyle = opts.UsePathStyle
 
 		if opts.DebugMode {
 			o.ClientLogMode = aws.LogSigning | aws.LogRequest | aws.LogResponseWithBody
