@@ -16,6 +16,10 @@ import (
 
 type S3Options struct {
 	Bucket string
+	// If true, this will log request and responses
+	DebugMode bool
+
+	UsePathStyle bool
 
 	// Only use if the bucket supports ACL
 	ACL types.ObjectCannedACL
@@ -31,8 +35,16 @@ func NewS3FromConfig(cfg aws.Config, opts S3Options) (*S3Store, error) {
 		return nil, errors.New("please provide a valid s3 bucket")
 	}
 
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.UsePathStyle = opts.UsePathStyle
+
+		if opts.DebugMode {
+			o.ClientLogMode = aws.LogSigning | aws.LogRequest | aws.LogResponseWithBody
+		}
+	})
+
 	return &S3Store{
-		client: s3.NewFromConfig(cfg),
+		client: client,
 		opts:   opts,
 	}, nil
 }
@@ -47,8 +59,16 @@ func NewS3FromEnvironment(opts S3Options) (*S3Store, error) {
 		return nil, err
 	}
 
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.UsePathStyle = opts.UsePathStyle
+
+		if opts.DebugMode {
+			o.ClientLogMode = aws.LogSigning | aws.LogRequest | aws.LogResponseWithBody
+		}
+	})
+
 	return &S3Store{
-		client: s3.NewFromConfig(cfg),
+		client: client,
 		opts:   opts,
 	}, nil
 }
