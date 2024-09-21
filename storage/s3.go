@@ -89,15 +89,6 @@ func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 	opts *gulter.UploadFileOptions,
 ) (*gulter.UploadedFileMetadata, error) {
 
-	var err error
-
-	if _, ok := r.(io.ReadSeeker); !ok {
-		r, err = gulter.ReaderToSeeker(r)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	b := new(bytes.Buffer)
 
 	r = io.TeeReader(r, b)
@@ -107,12 +98,17 @@ func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 		return nil, err
 	}
 
+	seeker, err := gulter.ReaderToSeeker(b)
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = s.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:   aws.String(s.opts.Bucket),
 		Metadata: opts.Metadata,
 		Key:      aws.String(opts.FileName),
 		ACL:      s.opts.ACL,
-		Body:     b,
+		Body:     seeker,
 	})
 	if err != nil {
 		return nil, err
