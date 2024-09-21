@@ -8,10 +8,18 @@ for your web apps. It follows the standard
 `http.Handler` and `http.HandlerFunc` interfaces so you can
 always use with any of framework or the standard library router.
 
-Multiple files per form field are already supported
+> [!NOTE]
+> Name and idea was gotten from the insanely popular multer package in NodeJS that does the same
 
-> Name and idea was gotten from the insanely popular multer package
-> in NodeJS that does the same.
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Standard HTTP router](#standard-http-router)
+  - [Chi Router and others](#chi-router-and-other-compatible-http-handlers)
+- [API](#api)
+- [FAQs](#faqs)
+  - [customizing http error](#customizing-the-error-response)
+  - [ignoring keys](#ignoring-non-existent-keys-in-the-multipart-request)
+  - [custom validation logic](#writing-your-custom-validator-logic)
 
 ## Installation
 
@@ -172,7 +180,9 @@ Gulter also ships with two storage implementations at the moment:
 - `DiskStore`: uses a local filesystem backed store to upload files
 - `CloudinaryStore`: uploads file to cloudinary
 
-## Ignoring non existent keys in the multipart Request
+## FAQs
+
+### Ignoring non existent keys in the multipart Request
 
 Sometimes, the keys you have configured the middleware might get dropped from the
 frontend for some reason, ideally the middleware fails if it cannot find a
@@ -180,7 +190,7 @@ configured key in the request. To disable this behavior and ignore the missing
 key, you can make use of the `WithIgnoreNonExistentKey(true)` option to prevent the
 middleware from causing an error when such keys do not exists
 
-## Customizing the error response
+### Customizing the error response
 
 Since Gulter is a middleware that runs, it returns an error to the client if found,
 this might not match your existing structure, so to configure the response, use the
@@ -198,7 +208,7 @@ to define yours.
  }
 ```
 
-## Writing your custom validator logic
+### Writing your custom validator logic
 
 Sometimes, you could have some custom logic to validate uploads, in this example
 below, we limit the size of the upload based on the mimeypes of the uploaded files
