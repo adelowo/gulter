@@ -17,7 +17,6 @@ always use with any of framework or the standard library router.
   - [Chi Router and others](#chi-router-and-other-compatible-http-handlers)
 - [API](#api)
 - [FAQs](#faqs)
-  - [request stream is not seekable](#failed-to-seek-body-to-start-request-stream-is-not-seekable)
   - [customizing http error](#customizing-the-error-response)
   - [ignoring keys](#ignoring-non-existent-keys-in-the-multipart-request)
   - [custom validation logic](#writing-your-custom-validator-logic)
@@ -182,43 +181,6 @@ Gulter also ships with two storage implementations at the moment:
 - `CloudinaryStore`: uploads file to cloudinary
 
 ## FAQs
-
-### failed to seek body to start, request stream is not seekable?
-
-Some operations using S3 require using an `io.ReadSeeker` underneath. While uploaded
-files via http have the file as an `io.Reader`, this would cause your S3 uploads to
-fail. You can convert your `io.Reader` to `io.ReadSeeker` so all passes still.
-
-I have chosen to keep the interface with an `io.Reader` still as internally implementations
-can choose to check if they can seek or others.
-
-```go
-func ReaderToSeeker(r io.Reader) (io.ReadSeeker, error) {
-    tmpfile, err := os.CreateTemp("", "upload-")
-    if err != nil {
-        return nil, err
-    }
-
-    _, err = io.Copy(tmpfile, r)
-    if err != nil {
-        tmpfile.Close()
-        os.Remove(tmpfile.Name())
-        return nil, err
-    }
-
-    _, err = tmpfile.Seek(0, 0)
-    if err != nil {
-        tmpfile.Close()
-        os.Remove(tmpfile.Name())
-        return nil, err
-    }
-
-    // Return the file, which implements io.ReadSeeker
-    // which you can now pass to the gulter uploader
-    return tmpfile, nil
-}
-
-```
 
 ### Ignoring non existent keys in the multipart Request
 

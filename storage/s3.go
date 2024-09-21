@@ -88,6 +88,16 @@ func (s *S3Store) Close() error { return nil }
 func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 	opts *gulter.UploadFileOptions,
 ) (*gulter.UploadedFileMetadata, error) {
+
+	var err error
+
+	if _, ok := r.(io.ReadSeeker); !ok {
+		r, err = gulter.ReaderToSeeker(r)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	b := new(bytes.Buffer)
 
 	r = io.TeeReader(r, b)
