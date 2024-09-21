@@ -17,7 +17,7 @@ always use with any of framework or the standard library router.
   - [Chi Router and others](#chi-router-and-other-compatible-http-handlers)
 - [API](#api)
 - [FAQs](#faqs)
-  - [request stream is not seekable](#s3-failed-to-seek-body-to-start-request-stream-is-not-seekable)
+  - [request stream is not seekable](#failed-to-seek-body-to-start-request-stream-is-not-seekable)
   - [customizing http error](#customizing-the-error-response)
   - [ignoring keys](#ignoring-non-existent-keys-in-the-multipart-request)
   - [custom validation logic](#writing-your-custom-validator-logic)
@@ -183,7 +183,7 @@ Gulter also ships with two storage implementations at the moment:
 
 ## FAQs
 
-### S3 : failed to seek body to start, request stream is not seekable?
+### failed to seek body to start, request stream is not seekable?
 
 Some operations using S3 require using an `io.ReadSeeker` underneath. While uploaded
 files via http have the file as an `io.Reader`, this would cause your S3 uploads to
