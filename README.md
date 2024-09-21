@@ -8,10 +8,19 @@ for your web apps. It follows the standard
 `http.Handler` and `http.HandlerFunc` interfaces so you can
 always use with any of framework or the standard library router.
 
-Multiple files per form field are already supported
+> [!NOTE]
+> Name and idea was gotten from the insanely popular multer package in NodeJS that does the same
 
-> Name and idea was gotten from the insanely popular multer package
-> in NodeJS that does the same.
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Standard HTTP router](#standard-http-router)
+  - [Chi Router and others](#chi-router-and-other-compatible-http-handlers)
+- [API](#api)
+- [FAQs](#faqs)
+  - [request stream is not seekable](#s3-failed-to-seek-body-to-start-request-stream-is-not-seekable)
+  - [customizing http error](#customizing-the-error-response)
+  - [ignoring keys](#ignoring-non-existent-keys-in-the-multipart-request)
+  - [custom validation logic](#writing-your-custom-validator-logic)
 
 ## Installation
 
@@ -172,7 +181,46 @@ Gulter also ships with two storage implementations at the moment:
 - `DiskStore`: uses a local filesystem backed store to upload files
 - `CloudinaryStore`: uploads file to cloudinary
 
-## Ignoring non existent keys in the multipart Request
+## FAQs
+
+### S3 : failed to seek body to start, request stream is not seekable?
+
+Some operations using S3 require using an `io.ReadSeeker` underneath. While uploaded
+files via http have the file as an `io.Reader`, this would cause your S3 uploads to
+fail. You can convert your `io.Reader` to `io.ReadSeeker` so all passes still.
+
+I have chosen to keep the interface with an `io.Reader` still as internally implementations
+can choose to check if they can seek or others.
+
+```go
+func ReaderToSeeker(r io.Reader) (io.ReadSeeker, error) {
+    tmpfile, err := os.CreateTemp("", "upload-")
+    if err != nil {
+        return nil, err
+    }
+
+    _, err = io.Copy(tmpfile, r)
+    if err != nil {
+        tmpfile.Close()
+        os.Remove(tmpfile.Name())
+        return nil, err
+    }
+
+    _, err = tmpfile.Seek(0, 0)
+    if err != nil {
+        tmpfile.Close()
+        os.Remove(tmpfile.Name())
+        return nil, err
+    }
+
+    // Return the file, which implements io.ReadSeeker
+    // which you can now pass to the gulter uploader
+    return tmpfile, nil
+}
+
+```
+
+### Ignoring non existent keys in the multipart Request
 
 Sometimes, the keys you have configured the middleware might get dropped from the
 frontend for some reason, ideally the middleware fails if it cannot find a
@@ -180,7 +228,7 @@ configured key in the request. To disable this behavior and ignore the missing
 key, you can make use of the `WithIgnoreNonExistentKey(true)` option to prevent the
 middleware from causing an error when such keys do not exists
 
-## Customizing the error response
+### Customizing the error response
 
 Since Gulter is a middleware that runs, it returns an error to the client if found,
 this might not match your existing structure, so to configure the response, use the
@@ -198,7 +246,7 @@ to define yours.
  }
 ```
 
-## Writing your custom validator logic
+### Writing your custom validator logic
 
 Sometimes, you could have some custom logic to validate uploads, in this example
 below, we limit the size of the upload based on the mimeypes of the uploaded files
