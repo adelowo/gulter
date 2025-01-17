@@ -92,7 +92,7 @@ func New(opts ...Option) (*Gulter, error) {
 
 // Upload is a HTTP middleware that takes in a list of form fields and the next
 // HTTP handler to run after the upload prodcess is completed
-func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
+func (h *Gulter) Upload(bucket string, keys ...string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r.Body = http.MaxBytesReader(w, r.Body, h.maxSize)
@@ -149,6 +149,7 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 
 							metadata, err := h.storage.Upload(r.Context(), f, &UploadFileOptions{
 								FileName: uploadedFileName,
+								Bucket:   bucket,
 							})
 							if err != nil {
 								return fmt.Errorf("gulter: could not upload file to storage (%s)...%v", key, err)

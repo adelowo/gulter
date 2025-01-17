@@ -33,7 +33,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	// upload all files with the "name" and "lanre" fields on this route
-	mux.Handle("/", handler.Upload("lanre")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/", handler.Upload("bucket_name", "lanre")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Uploaded file")
 
 		f, err := gulter.FilesFromContext(r)

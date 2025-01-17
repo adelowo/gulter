@@ -34,6 +34,8 @@ github.com/aws/aws-sdk-go-v2/service/sts v1.28.0 h1:F7tQr61zYnTaeY50Rn4jwfVQbtcq
 github.com/aws/aws-sdk-go-v2/service/sts v1.28.0/go.mod h1:ozhhG9/NB5c9jcmhGq6tX9dpp21LYdmRWRQVppASim4=
 github.com/aws/smithy-go v1.20.1 h1:4SZlSlMr36UEqC7XOyRVb27XMeZubNcBNN+9IgEPIQw=
 github.com/aws/smithy-go v1.20.1/go.mod h1:krry+ya/rV9RDcV/Q16kpu6ypI4K2czasz0NC3qS14E=
+github.com/ayinke-llc/hermes v0.0.0-20241111220852-f19376e25099 h1:p1tkPEnHysUOaZmrx+9eTVAd/lGVNUnPIjNaeLjMoWo=
+github.com/ayinke-llc/hermes v0.0.0-20241111220852-f19376e25099/go.mod h1:cnEG0FhcGFSCJxabWJIOG2ujyuYY4VrmXXWLymUyDAc=
 github.com/cloudinary/cloudinary-go/v2 v2.7.0 h1:8Fuh/SOen6IQgqH8CLso2E+kuKi2xjbdiyXOspwXFTM=
 github.com/cloudinary/cloudinary-go/v2 v2.7.0/go.mod h1:jtSxa6xbzvu4IwChRJVDcXwVXrTRczhbvq3Z1VSoFdk=
 github.com/creasty/defaults v1.5.1 h1:j8WexcS3d/t4ZmllX4GEkl4wIB/trOr035ajcLHCISM=
@@ -60,8 +62,8 @@ github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAm
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
-github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
+github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
+github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 go.uber.org/mock v0.4.0 h1:VcM4ZOtdbR4f6VXfiOpwpVJDL6lCReaZ6mw31wqh7KU=
 go.uber.org/mock v0.4.0/go.mod h1:a6FSlNadKUHUa9IP5Vyt1zh4fC7uAwxMutEAscFbkZc=
 golang.org/x/sync v0.6.0 h1:5BMeUDZ7vkXGfEr1x9B4bRcTH4lpkTkpdh0T/J+qjbQ=

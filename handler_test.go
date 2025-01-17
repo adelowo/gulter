@@ -194,7 +194,7 @@ func TestGulter(t *testing.T) {
 			r := httptest.NewRequest(http.MethodPatch, "/", buffer)
 			r.Header.Set("Content-Type", multipartWriter.FormDataContentType())
 
-			handler.Upload("form-field")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			handler.Upload("bucket_name", "form-field")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if v.useIgnoreSkipOpt {
 					w.WriteHeader(http.StatusAccepted)
 					fmt.Fprintf(w, "skipping check since we did not upload any file")
