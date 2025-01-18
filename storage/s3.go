@@ -7,15 +7,14 @@ import (
 	"io"
 
 	"github.com/adelowo/gulter"
-	"github.com/adelowo/gulter/internal/util"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/ayinke-llc/hermes"
 )
 
 type S3Options struct {
-	Bucket string
 	// If true, this will log request and responses
 	DebugMode bool
 
@@ -31,10 +30,6 @@ type S3Store struct {
 }
 
 func NewS3FromConfig(cfg aws.Config, opts S3Options) (*S3Store, error) {
-	if util.IsStringEmpty(opts.Bucket) {
-		return nil, errors.New("please provide a valid s3 bucket")
-	}
-
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.UsePathStyle = opts.UsePathStyle
 
@@ -50,9 +45,6 @@ func NewS3FromConfig(cfg aws.Config, opts S3Options) (*S3Store, error) {
 }
 
 func NewS3FromEnvironment(opts S3Options) (*S3Store, error) {
-	if util.IsStringEmpty(opts.Bucket) {
-		return nil, errors.New("please provide a valid s3 bucket")
-	}
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
@@ -73,10 +65,8 @@ func NewS3FromEnvironment(opts S3Options) (*S3Store, error) {
 	}, nil
 }
 
-func NewS3FromClient(client *s3.Client, opts S3Options) (*S3Store, error) {
-	if util.IsStringEmpty(opts.Bucket) {
-		return nil, errors.New("please provide a valid s3 bucket")
-	}
+func NewS3FromClient(client *s3.Client,
+	opts S3Options) (*S3Store, error) {
 	return &S3Store{
 		client,
 		opts,
@@ -88,6 +78,10 @@ func (s *S3Store) Close() error { return nil }
 func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 	opts *gulter.UploadFileOptions,
 ) (*gulter.UploadedFileMetadata, error) {
+
+	if hermes.IsStringEmpty(opts.Bucket) {
+		return nil, errors.New("please provide a valid s3 bucket")
+	}
 
 	b := new(bytes.Buffer)
 
@@ -104,7 +98,7 @@ func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 	}
 
 	_, err = s.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:   aws.String(s.opts.Bucket),
+		Bucket:   aws.String(opts.Bucket),
 		Metadata: opts.Metadata,
 		Key:      aws.String(opts.FileName),
 		ACL:      s.opts.ACL,
@@ -115,7 +109,7 @@ func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 	}
 
 	return &gulter.UploadedFileMetadata{
-		FolderDestination: s.opts.Bucket,
+		FolderDestination: opts.Bucket,
 		Size:              n,
 		Key:               opts.FileName,
 	}, nil

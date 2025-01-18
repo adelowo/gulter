@@ -2,27 +2,18 @@ package storage
 
 import (
 	"context"
-	"errors"
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/adelowo/gulter"
 )
 
 type Disk struct {
-	destinationFolder string
 }
 
-func NewDiskStorage(folder string) (*Disk, error) {
-	if len(strings.TrimSpace(folder)) == 0 {
-		return nil, errors.New("please provide a valid folder path")
-	}
-
-	return &Disk{
-		destinationFolder: folder,
-	}, nil
+func NewDiskStorage() (*Disk, error) {
+	return &Disk{}, nil
 }
 
 func (d *Disk) Close() error { return nil }
@@ -30,7 +21,7 @@ func (d *Disk) Close() error { return nil }
 func (d *Disk) Upload(ctx context.Context, r io.Reader,
 	opts *gulter.UploadFileOptions,
 ) (*gulter.UploadedFileMetadata, error) {
-	f, err := os.Create(filepath.Join(d.destinationFolder,
+	f, err := os.Create(filepath.Join(opts.Bucket,
 		opts.FileName))
 	if err != nil {
 		return nil, err
@@ -39,7 +30,7 @@ func (d *Disk) Upload(ctx context.Context, r io.Reader,
 
 	n, err := io.Copy(f, r)
 	return &gulter.UploadedFileMetadata{
-		FolderDestination: d.destinationFolder,
+		FolderDestination: opts.Bucket,
 		Size:              n,
 		Key:               opts.FileName,
 	}, err

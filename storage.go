@@ -8,6 +8,10 @@ import (
 type UploadFileOptions struct {
 	FileName string
 	Metadata map[string]string
+
+	// If not provided, the default bucket will be used
+	// This is useful
+	Bucket string
 }
 
 type UploadedFileMetadata struct {
@@ -22,5 +26,3 @@ type Storage interface {
 	Upload(context.Context, io.Reader, *UploadFileOptions) (*UploadedFileMetadata, error)
 	io.Closer
 }
-
-//go:generate mockgen -destination=mocks/storage.go -source=storage.go -package mocks
