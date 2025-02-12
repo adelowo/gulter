@@ -90,6 +90,8 @@ func New(opts ...Option) (*Gulter, error) {
 	return handler, nil
 }
 
+func (g *Gulter) Storage() Storage { return g.storage }
+
 // Upload is a HTTP middleware that takes in a list of form fields and the next
 // HTTP handler to run after the upload prodcess is completed
 func (h *Gulter) Upload(bucket string, keys ...string) func(next http.Handler) http.Handler {
