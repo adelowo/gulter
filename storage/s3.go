@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/adelowo/gulter"
@@ -113,4 +114,37 @@ func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 		Size:              n,
 		Key:               opts.FileName,
 	}, nil
+}
+
+func (s *S3Store) Path(ctx context.Context, opts gulter.PathOptions) (string, error) {
+
+	if !opts.IsSecure {
+
+		resp, err := s.client.GetBucketLocation(ctx, &s3.GetBucketLocationInput{
+			Bucket: hermes.Ref(opts.Bucket),
+		})
+		if err != nil {
+			return "", fmt.Errorf("failed to get bucket location: %w", err)
+		}
+
+		region := string(resp.LocationConstraint)
+		if region == "" {
+			region = "us-east-1"
+		}
+
+		url := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", opts.Bucket, region, opts.Key)
+		return url, nil
+	}
+
+	presignClient := s3.NewPresignClient(s.client)
+
+	presignedReq, err := presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: hermes.Ref(opts.Bucket),
+		Key:    hermes.Ref(opts.Key),
+	}, s3.WithPresignExpires(opts.ExpirationTime))
+	if err != nil {
+		return "", err
+	}
+
+	return presignedReq.URL, nil
 }

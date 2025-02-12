@@ -2,12 +2,15 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/adelowo/gulter"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api"
+	"github.com/cloudinary/cloudinary-go/v2/api/admin"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
+	"github.com/cloudinary/cloudinary-go/v2/asset"
 )
 
 type CloudinaryOptions struct {
@@ -58,4 +61,31 @@ func (c *CloudinaryStore) Upload(ctx context.Context,
 		Size:              int64(resp.Bytes),
 		Key:               resp.PublicID,
 	}, nil
+}
+
+func (c *CloudinaryStore) Path(ctx context.Context,
+	opts gulter.PathOptions) (string, error) {
+
+	resp, err := c.client.Admin.Asset(ctx, admin.AssetParams{PublicID: opts.Key})
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch asset details: %w", err)
+	}
+
+	var url *asset.Asset
+	switch resp.ResourceType {
+	case "image":
+		url, err = c.client.Image(opts.Key)
+	case "video":
+		url, err = c.client.Video(opts.Key)
+	case "raw":
+		url, err = c.client.File(opts.Key)
+	default:
+		return "", fmt.Errorf("unsupported resource type: %s", resp.ResourceType)
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("failed to generate URL: %w", err)
+	}
+
+	return url.String()
 }

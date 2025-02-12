@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -12,10 +13,21 @@ import (
 )
 
 type Disk struct {
+	folder string
 }
 
-func NewDiskStorage() (*Disk, error) {
-	return &Disk{}, nil
+func NewDiskStorage(pathToFolder string) (*Disk, error) {
+	if hermes.IsStringEmpty(pathToFolder) {
+		return nil, errors.New("please provide a bucket")
+	}
+
+	if _, err := os.Stat(pathToFolder); err != nil {
+		return nil, err
+	}
+
+	return &Disk{
+		folder: pathToFolder,
+	}, nil
 }
 
 func (d *Disk) Close() error { return nil }
@@ -24,21 +36,26 @@ func (d *Disk) Upload(ctx context.Context, r io.Reader,
 	opts *gulter.UploadFileOptions,
 ) (*gulter.UploadedFileMetadata, error) {
 
-	if hermes.IsStringEmpty(opts.Bucket) {
-		return nil, errors.New("please provide a valid folder")
-	}
-
-	f, err := os.Create(filepath.Join(opts.Bucket,
-		opts.FileName))
+	f, err := os.Create(filepath.Join(d.folder, opts.FileName))
 	if err != nil {
 		return nil, err
 	}
+
 	defer f.Close()
 
 	n, err := io.Copy(f, r)
+	if err != nil {
+		return nil, err
+	}
+
 	return &gulter.UploadedFileMetadata{
-		FolderDestination: opts.Bucket,
+		FolderDestination: d.folder,
 		Size:              n,
 		Key:               opts.FileName,
 	}, err
+}
+
+func (d *Disk) Path(ctx context.Context,
+	opts gulter.PathOptions) (string, error) {
+	return fmt.Sprintf("%s/%s", d.folder, opts.Key), nil
 }
