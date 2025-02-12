@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -11,7 +12,11 @@ import (
 
 func main() {
 
-	disk, _ := storage.NewDiskStorage("/Users/lanreadelowo/yikes/")
+	disk, err := storage.NewDiskStorage("/Users/lanreadelowo/yikes/")
+
+	if err != nil {
+		panic(err)
+	}
 
 	// do not ignore :))
 	handler, _ := gulter.New(
@@ -34,7 +39,6 @@ func main() {
 
 	// upload all files with the "name" and "lanre" fields on this route
 	mux.Handle("/", handler.Upload("bucket_name", "lanre")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Uploaded file")
 
 		f, err := gulter.FilesFromContext(r)
 		if err != nil {
@@ -53,7 +57,13 @@ func main() {
 		for _, v := range f {
 			fmt.Printf("%+v\n", v)
 			fmt.Println()
+
+			fmt.Println(disk.Path(context.Background(), gulter.PathOptions{
+				Key:    v[0].StorageKey,
+				Bucket: v[0].FolderDestination,
+			}))
 		}
+
 	})))
 
 	http.ListenAndServe(":3300", mux)
