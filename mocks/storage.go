@@ -56,6 +56,21 @@ func (mr *MockStorageMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockStorage)(nil).Close))
 }
 
+// Path mocks base method.
+func (m *MockStorage) Path(arg0 context.Context, arg1 gulter.PathOptions) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Path", arg0, arg1)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Path indicates an expected call of Path.
+func (mr *MockStorageMockRecorder) Path(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Path", reflect.TypeOf((*MockStorage)(nil).Path), arg0, arg1)
+}
+
 // Upload mocks base method.
 func (m *MockStorage) Upload(arg0 context.Context, arg1 io.Reader, arg2 *gulter.UploadFileOptions) (*gulter.UploadedFileMetadata, error) {
 	m.ctrl.T.Helper()
