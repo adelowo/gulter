@@ -59,3 +59,11 @@ func (c *CloudinaryStore) Upload(ctx context.Context,
 		Key:               resp.PublicID,
 	}, nil
 }
+
+func (c *CloudinaryStore) Path(ctx context.Context, opts gulter.PathOptions) (string, error) {
+
+	asset, err := c.client.File(opts.Key)
+
+	return "", err
+
+}
