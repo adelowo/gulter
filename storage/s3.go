@@ -103,16 +103,11 @@ func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 		return nil, err
 	}
 
-	aclUpload := types.ObjectCannedACLPublicRead
-	if opts.IsPrivate {
-		aclUpload = types.ObjectCannedACLPrivate
-	}
-
 	_, err = s.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:   aws.String(s.bucket),
 		Metadata: opts.Metadata,
 		Key:      aws.String(opts.FileName),
-		ACL:      aclUpload,
+		ACL:      s.opts.ACL,
 		Body:     seeker,
 	})
 	if err != nil {

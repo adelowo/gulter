@@ -9,10 +9,6 @@ import (
 type UploadFileOptions struct {
 	FileName string
 	Metadata map[string]string
-
-	// Some implementations like aws can upload private items
-	// only fetchable by private url
-	IsPrivate bool
 }
 
 type UploadedFileMetadata struct {
