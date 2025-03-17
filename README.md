@@ -91,9 +91,7 @@ func main() {
  mux := http.NewServeMux()
 
  // upload all files with the "name" and "lanre" fields on this route
-  // will be uploaded into the bucket_name bucket
-  // This allows you handle both public and private buckets or dynamically route files
- mux.Handle("/", handler.Upload("bucket_name","name", "lanre")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+ mux.Handle("/", handler.Upload("name", "lanre")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
   fmt.Println("Uploaded file")
 
   // return all uploaded files
@@ -142,9 +140,7 @@ func main() {
  router := chi.NewMux()
 
   // upload all files in the form fields called "form-field-1" and "form-field-2"
-  // will be uploaded into the bucket_name bucket
-  // This allows you handle both public and private buckets or dynamically route files
- router.With(handler.Upload("bucket_name", "form-field-1", "form-field-2")).Post("/", func(w http.ResponseWriter, r *http.Request) {
+ router.With(handler.Upload("form-field-1", "form-field-2")).Post("/", func(w http.ResponseWriter, r *http.Request) {
   fmt.Println("Uploaded file")
 
   f, err := gulter.FilesFromContext(r)

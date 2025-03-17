@@ -10,9 +10,9 @@ type UploadFileOptions struct {
 	FileName string
 	Metadata map[string]string
 
-	// If not provided, the default bucket will be used
-	// This is useful
-	Bucket string
+	// Some implementations like aws can upload private items
+	// only fetchable by private url
+	IsPrivate bool
 }
 
 type UploadedFileMetadata struct {
@@ -22,8 +22,7 @@ type UploadedFileMetadata struct {
 }
 
 type PathOptions struct {
-	Bucket string `json:"bucket,omitempty"`
-	Key    string `json:"key,omitempty"`
+	Key string `json:"key,omitempty"`
 
 	// Will only take effect if IsSecure is provided
 	ExpirationTime time.Duration `json:"expiration_time,omitempty"`

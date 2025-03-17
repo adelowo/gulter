@@ -16,6 +16,7 @@ import (
 )
 
 type S3Options struct {
+	Bucket string
 	// If true, this will log request and responses
 	DebugMode bool
 
@@ -28,9 +29,15 @@ type S3Options struct {
 type S3Store struct {
 	client *s3.Client
 	opts   S3Options
+	bucket string
 }
 
 func NewS3FromConfig(cfg aws.Config, opts S3Options) (*S3Store, error) {
+
+	if hermes.IsStringEmpty(opts.Bucket) {
+		return nil, errors.New("please provide a valid s3 bucket")
+	}
+
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.UsePathStyle = opts.UsePathStyle
 
@@ -42,6 +49,7 @@ func NewS3FromConfig(cfg aws.Config, opts S3Options) (*S3Store, error) {
 	return &S3Store{
 		client: client,
 		opts:   opts,
+		bucket: opts.Bucket,
 	}, nil
 }
 
@@ -71,6 +79,7 @@ func NewS3FromClient(client *s3.Client,
 	return &S3Store{
 		client,
 		opts,
+		opts.Bucket,
 	}, nil
 }
 
@@ -79,10 +88,6 @@ func (s *S3Store) Close() error { return nil }
 func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 	opts *gulter.UploadFileOptions,
 ) (*gulter.UploadedFileMetadata, error) {
-
-	if hermes.IsStringEmpty(opts.Bucket) {
-		return nil, errors.New("please provide a valid s3 bucket")
-	}
 
 	b := new(bytes.Buffer)
 
@@ -98,11 +103,16 @@ func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 		return nil, err
 	}
 
+	aclUpload := types.ObjectCannedACLPublicRead
+	if opts.IsPrivate {
+		aclUpload = types.ObjectCannedACLPrivate
+	}
+
 	_, err = s.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:   aws.String(opts.Bucket),
+		Bucket:   aws.String(s.bucket),
 		Metadata: opts.Metadata,
 		Key:      aws.String(opts.FileName),
-		ACL:      s.opts.ACL,
+		ACL:      aclUpload,
 		Body:     seeker,
 	})
 	if err != nil {
@@ -110,7 +120,7 @@ func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 	}
 
 	return &gulter.UploadedFileMetadata{
-		FolderDestination: opts.Bucket,
+		FolderDestination: s.bucket,
 		Size:              n,
 		Key:               opts.FileName,
 	}, nil
@@ -121,7 +131,7 @@ func (s *S3Store) Path(ctx context.Context, opts gulter.PathOptions) (string, er
 	if !opts.IsSecure {
 
 		resp, err := s.client.GetBucketLocation(ctx, &s3.GetBucketLocationInput{
-			Bucket: hermes.Ref(opts.Bucket),
+			Bucket: hermes.Ref(s.bucket),
 		})
 		if err != nil {
 			return "", fmt.Errorf("failed to get bucket location: %w", err)
@@ -132,14 +142,14 @@ func (s *S3Store) Path(ctx context.Context, opts gulter.PathOptions) (string, er
 			region = "us-east-1"
 		}
 
-		url := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", opts.Bucket, region, opts.Key)
+		url := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", s.bucket, region, opts.Key)
 		return url, nil
 	}
 
 	presignClient := s3.NewPresignClient(s.client)
 
 	presignedReq, err := presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: hermes.Ref(opts.Bucket),
+		Bucket: hermes.Ref(s.bucket),
 		Key:    hermes.Ref(opts.Key),
 	}, s3.WithPresignExpires(opts.ExpirationTime))
 	if err != nil {
