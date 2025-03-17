@@ -24,12 +24,16 @@ type S3Options struct {
 
 	// Only use if the bucket supports ACL
 	ACL types.ObjectCannedACL
+
+	// If enabled, we will use this as the domain path for Path
+	CloudflareDomain string
 }
 
 type S3Store struct {
-	client *s3.Client
-	opts   S3Options
-	bucket string
+	client           *s3.Client
+	opts             S3Options
+	bucket           string
+	cloudflareDomain string
 }
 
 func NewS3FromConfig(cfg aws.Config, opts S3Options) (*S3Store, error) {
@@ -47,9 +51,10 @@ func NewS3FromConfig(cfg aws.Config, opts S3Options) (*S3Store, error) {
 	})
 
 	return &S3Store{
-		client: client,
-		opts:   opts,
-		bucket: opts.Bucket,
+		client:           client,
+		opts:             opts,
+		bucket:           opts.Bucket,
+		cloudflareDomain: opts.CloudflareDomain,
 	}, nil
 }
 
@@ -80,6 +85,7 @@ func NewS3FromClient(client *s3.Client,
 		client,
 		opts,
 		opts.Bucket,
+		opts.CloudflareDomain,
 	}, nil
 }
 
@@ -124,6 +130,10 @@ func (s *S3Store) Upload(ctx context.Context, r io.Reader,
 func (s *S3Store) Path(ctx context.Context, opts gulter.PathOptions) (string, error) {
 
 	if !opts.IsSecure {
+
+		if !hermes.IsStringEmpty(s.cloudflareDomain) {
+			return fmt.Sprintf("%s/%s", s.cloudflareDomain, opts.Key), nil
+		}
 
 		resp, err := s.client.GetBucketLocation(ctx, &s3.GetBucketLocationInput{
 			Bucket: hermes.Ref(s.bucket),
