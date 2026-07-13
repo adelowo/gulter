@@ -150,7 +150,8 @@ func (h *Gulter) Upload(keys ...string) func(next http.Handler) http.Handler {
 							}
 
 							metadata, err := h.storage.Upload(r.Context(), f, &UploadFileOptions{
-								FileName: uploadedFileName,
+								FileName:    uploadedFileName,
+								ContentType: mimeType,
 							})
 							if err != nil {
 								return fmt.Errorf("gulter: could not upload file to storage (%s)...%v", key, err)
